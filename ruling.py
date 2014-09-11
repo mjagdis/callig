@@ -69,8 +69,10 @@ def draw_lines(canvas, opts, pagesize):
                 canvas.setStrokeColor(toColor('black'))
 
             ystep = xstep * tantheta
-            x = xstep
-            y = pagesize[1] - ystep
+#           x = 0                                   # origin is at the top left
+#           x = ((pagesize[0] - xstep) / 2) % xstep # origin is centre page and between two lines
+            x = (pagesize[0] / 2) % xstep           # origin is centre page and on a line
+            y = pagesize[1] - x * tantheta
             while x <= pagesize[0] and y >= 0:
                 canvas.line(0, y, x, pagesize[1])
                 x += xstep
@@ -80,8 +82,8 @@ def draw_lines(canvas, opts, pagesize):
                 while y >= 0:
                     canvas.line(0, y, pagesize[0], y + h)
                     y -= ystep
-                x = 0
-                y = pagesize[0] * tantheta
+                x = -y / tantheta
+                y = (pagesize[0] - x) * tantheta
                 while x < pagesize[0]:
                     canvas.line(x, 0, pagesize[0], y)
                     x += xstep
