@@ -283,8 +283,12 @@ def main(opts):
     c = canvas.Canvas(opts.output, bottomup = 1, pagesize = pagesize, cropMarks = True)
     c.setAuthor("Eris Associates Ltd")
     if opts.title:
-        opts.title += " - "
-    opts.title += "%smm nib"%(opts.nib_width)
+        try:
+            opts.title = opts.title%(opts.nib_width)
+        except:
+            0
+    else:
+        opts.title = "%smm nib"%(opts.nib_width)
     c.setTitle(opts.title)
 
     def subj_quote(x): return '[' + x + ']'

@@ -1,4 +1,6 @@
---title 'italic'
+# The %s in the title will be replaced with whatever nib width
+# is specified.
+--title 'italic - %smm nib'
 
 #--bar-width 1
 

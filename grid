@@ -1,4 +1,6 @@
---title 'grid'
+# The %s in the title will be replaced with whatever nib width
+# is specified.
+--title 'grid %smm'
 
 --top-margin 0
 --bar-width 0
