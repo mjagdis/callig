@@ -104,6 +104,7 @@ def draw_lines(canvas, opts, pagesize):
 #   canvas.rect(0, pagesize[1], pagesize[0], -opts.top_margin * opts.nib_width * mm, stroke = 0, fill = 1)
 #   canvas.restoreState()
 
+    offset = (2 * opts.bar_width + opts.offset * opts.nib_width) * mm
     position = pagesize[1] - (opts.top_margin * opts.nib_width * mm);
     while position >= line_height:
         position -= ascenders
@@ -113,6 +114,13 @@ def draw_lines(canvas, opts, pagesize):
             canvas.setFillColor(toColor(opts.gap_colour))
             canvas.rect(0, position - descenders, pagesize[0], -opts.gap * opts.nib_width * mm, stroke = 0, fill = 1)
             canvas.restoreState()
+
+        if opts.letters:
+            t = canvas.beginText()
+            t.setTextOrigin(offset, position)
+            t.textOut(opts.letters[0])
+            canvas.drawText(t)
+            opts.letters = opts.letters[1:]
 
         for param in opts.rules:
             pos = position + float(param[0]) * opts.nib_width * mm
@@ -142,13 +150,12 @@ def draw_lines(canvas, opts, pagesize):
                 except:
                     canvas.setStrokeColor(toColor('black'))
 
-                origin = (2 * opts.bar_width + opts.slant_offset * opts.nib_width) * mm
-                x1 = origin - descenders * tantheta
+                x1 = offset - descenders * tantheta
                 y1 = position - descenders
-                x2 = origin + ascenders * tantheta
+                x2 = offset + ascenders * tantheta
                 y2 = position + ascenders
-                while x1 < origin:
-                    canvas.line(origin, y1 + (-x1 + origin) / tantheta, x2, y2)
+                while x1 < offset:
+                    canvas.line(offset, y1 + (-x1 + offset) / tantheta, x2, y2)
                     x1 += xstep
                     x2 += xstep
                 while x2 <= pagesize[0]:
@@ -263,12 +270,6 @@ def write_title_and_credits(canvas, opts, pagesize):
 
 
 def main(opts):
-    if opts.font and opts.font_size:
-        try:
-            pdfmetrics.registerFont(TTFont('myfont', opts.font))
-        except:
-            pdfmetrics.registerFont(TTFont('myfont', opts.font + '.ttf'))
-
     if opts.landscape and opts.radial:
         print("Ignoring radial for landscape mode")
         opts.radial = False
@@ -291,20 +292,32 @@ def main(opts):
         opts.title = "%smm nib"%(opts.nib_width)
     c.setTitle(opts.title)
 
-    def subj_quote(x): return '[' + x + ']'
-    opts.subject = "rules: %s"%(", ".join(map(subj_quote, (", ".join(x) for x in opts.rules))))
+    def subj_list(x): return '[' + x + ']'
+    opts.subject = "Rules: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.rules)))
+    opts.subject += "  Gap: %.0f"%opts.gap
     if opts.slants:
-        opts.subject += "  slants: %s"%(", ".join(map(subj_quote, (", ".join(x) for x in opts.slants))))
+        opts.subject += "  Slants: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.slants)))
+    if opts.font and opts.font_size and opts.letters:
+        opts.subject += "  Font: " + opts.font
+        if opts.font_size:
+            opts.subject += "  Size: %.0f"%opts.font_size
     c.setSubject(opts.subject)
 
-    ink = toColor("black")
-    c.setFillColor(ink)
-    c.setStrokeColor(ink)
-
-    if opts.font and opts.font_size:
-        c.setFont('myfont', opts.font_size)
-
     while True:
+        ink = toColor("black")
+        c.setFillColor(ink)
+        c.setStrokeColor(ink)
+
+        if opts.font and opts.font_size:
+            try:
+                c.setFont(opts.font, opts.font_size)
+            except:
+                try:
+                    pdfmetrics.registerFont(TTFont('myfont', opts.font))
+                except:
+                    pdfmetrics.registerFont(TTFont('myfont', opts.font + '.ttf'))
+                c.setFont('myfont', opts.font_size)
+
         write_title_and_credits(c, opts, pagesize)
 
         if not opts.radial:
@@ -351,15 +364,15 @@ def parse_options():
     parser.add_argument("-w", "--nib-width", type = float,
                       help = "Width of the nib in millimeters. Other measurements in nw are multiples of this.")
     parser.add_argument("--top-margin", default = 2, type = int,
-                      help = "Top margin (in nib widths). Default is 2")
+                      help = "Top margin (in nib widths). Default is 2.")
 
     parser.add_argument("-b", "--bar-width", type = float, default = 1,
-                      help = "Width of the bar markings to be drawn on the left and right (in mm). Default 1.")
+                      help = "Width of the bar markings to be drawn on the left and right (in mm). Default is 1.")
 
     parser.add_argument("--font",
                       help = "Font to use for example letters.")
     parser.add_argument("--font-size", type = float,
-                      help = "Size of font to use for example letters.")
+                      help = "Size of font to use for example letters (in nib widths).")
     parser.add_argument("--letters", default = "",
                       help = "Letters to place at the start of lines (one per line).")
 
@@ -367,24 +380,26 @@ def parse_options():
                       help = "List of partition specifications in each line of the form: <height in nw> <line width in mm>[ <style>[ <colour>]]")
     parser.add_argument("--rule", dest = "rules", action = 'append',
                       help = "Like --rules but only a single rule may be given (although --rule may be repeated as necessary).")
-    parser.add_argument("-g", "--gap", type = float,
-                      help = "Gap between lines (in nib widths)")
-    parser.add_argument("-G", "--gap-colour",
+
+    parser.add_argument("-G", "--gap", type = float, default = 1,
+                      help = "Gap between lines (in nib widths). Default is 1.")
+    parser.add_argument("-g", "--gap-colour",
                       help = "Colour of gap between lines. No default (i.e. transparent).")
+
+    parser.add_argument("-O", "--offset", type = float, default = 1,
+                      help = "Offset of slant lines and letters from start of line or bar markings (in nib widths). Default is 1.")
 
     parser.add_argument("--slants-per-line", action="store_true", default = False,
                       help = "Whether slants are drawn within each line independently or across the entire page.")
-    parser.add_argument("-S", "--slant-offset", type = float, default = 1,
-                      help = "Offset of first slant lines from start of line or bar markings. Default is 1 nib width.")
     parser.add_argument("-s", "--slants", nargs = '+',
                       help = "list of slanted line specifications of the form: <deg from vert> <x separation in nw> <line width in mm>[ <style>[ <colour>]]")
     parser.add_argument("--slant", dest = "slants", action='append',
                       help = "Like --slants but only a single slant may be given (although --slant may be repeated as necessary).")
 
     parser.add_argument("-R", "--radial", action="store_true", default = False,
-                      help = "Draw circles instead of straight lines")
+                      help = "Draw circles instead of straight lines.")
     parser.add_argument("-n", "--rulings", default = 10, type=int,
-                      help = "How many rulings to draw. Default is 10")
+                      help = "How many rulings to draw. Default is 10.")
 
     parser.add_argument("--version", action = 'version', version = __VERSION__)
     opts = parser.parse_args()
