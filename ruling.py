@@ -166,6 +166,7 @@ def draw_lines(canvas, opts, pagesize):
         while pos < position + ascenders:
             barpos = (barpos + 1) % 2
             canvas.rect(barpos * opts.bar_width * mm, pos, opts.bar_width * mm, opts.nib_width * mm, stroke = 0, fill = 1)
+            canvas.rect(pagesize[0] - barpos * opts.bar_width * mm, pos, opts.bar_width * mm, opts.nib_width * mm, stroke = 0, fill = 1)
             pos += opts.nib_width * mm
 
         barpos = 1
@@ -173,6 +174,7 @@ def draw_lines(canvas, opts, pagesize):
         while pos > position - descenders:
             barpos = (barpos + 1) % 2
             canvas.rect(barpos * opts.bar_width * mm, pos, opts.bar_width * mm, -opts.nib_width * mm, stroke = 0, fill = 1)
+            canvas.rect(pagesize[0] - barpos * opts.bar_width * mm, pos, opts.bar_width * mm, -opts.nib_width * mm, stroke = 0, fill = 1)
             pos -= opts.nib_width * mm
 
         position -= descenders + opts.gap * opts.nib_width * mm
