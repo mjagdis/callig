@@ -281,8 +281,13 @@ def main(opts):
 
     opts.rules = [ x.split() for x in opts.rules ]
     opts.slants = [ x.split() for x in opts.slants ] if opts.slants else []
+    opts.bleed = opts.bleed.lower()
 
-    c = canvas.Canvas(opts.output, bottomup = 1, pagesize = pagesize, cropMarks = True)
+    c = canvas.Canvas(opts.output, bottomup = 1, pagesize = pagesize, cropMarks = (opts.bleed == "crop"))
+    if opts.bleed == "none":
+        pagesize = ( pagesize[0] - 72, pagesize[1] - 72 )
+        c.translate(36, 36)
+
     c.setAuthor("Eris Associates Ltd")
     if opts.title:
         try:
@@ -361,6 +366,8 @@ def parse_options():
                       help = "Size of sheet")
     parser.add_argument("-l", "--landscape", action="store_true", default = False,
                       help = "Create landscape instead of the default portrait sheet")
+    parser.add_argument("--bleed", default = "none",
+                      help = "none - place title and spec in margins around the rulings, crop - expand the page size, move the title and spec outside the normal page boundaries and add crop marks, full - place the title and spec off the edges of the page where they are probably lost. Both crop and none result in rulings that fill the given page size, although in the case of crop you would have to print on larger paper and cut down if required.")
 
     parser.add_argument("-w", "--nib-width", type = float,
                       help = "Width of the nib in millimeters. Other measurements in nw are multiples of this.")
