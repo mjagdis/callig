@@ -19,6 +19,7 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 
 __VERSION__ = "1.0"
+__COPYRIGHT__ = "v" + __VERSION__ + ", © Eris Associates Ltd, 2014"
 
  
 page_sizes = {
@@ -245,10 +246,10 @@ def write_title_and_credits(canvas, opts, pagesize):
 
     t = canvas.beginText()
     t.setFont("Times-Roman", 10)
-    l = stringWidth("© Eris Associates Ltd", "Times-Roman", 10)
+    l = stringWidth(__COPYRIGHT__, "Times-Roman", 10)
     t.setTextOrigin(width - l - 5*mm, height+5*mm)
-    t.textOut("© Eris Associates Ltd")
-    canvas.setFillColorRGB(0, 0, 0, 0.2)
+    t.textOut(__COPYRIGHT__)
+    canvas.setFillColorRGB(0, 0, 0, 0.4)
     canvas.drawText(t)
 
     canvas.setFillColorRGB(0, 0, 0, 1)
