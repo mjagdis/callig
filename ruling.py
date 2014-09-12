@@ -19,7 +19,8 @@ from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 
 __VERSION__ = "1.0"
-__COPYRIGHT__ = "v" + __VERSION__ + ", © Eris Associates Ltd, 2014"
+__AUTHOR__  = "Eris Associates Ltd"
+__COPYRIGHT__ = "v" + __VERSION__ + ", © " + __AUTHOR__ + ", 2014"
 
  
 page_sizes = {
@@ -50,6 +51,12 @@ def set_dash_style(canvas, spec):
     canvas.setDash(args[0], args[1])
 
 
+def toColorAlpha(colour, alpha):
+    colour = toColor(colour)
+    colour = colour.clone(alpha = alpha)
+    return colour
+
+
 def draw_lines(canvas, opts, pagesize):
     ascenders = max(float(x[0]) for x in opts.rules) * opts.nib_width * mm
     descenders = -min(float(x[0]) for x in opts.rules) * opts.nib_width * mm
@@ -59,15 +66,15 @@ def draw_lines(canvas, opts, pagesize):
         for param in opts.slants:
             tantheta = math.tan(math.radians(90 - float(param[0])))
             xstep = float(param[1]) * opts.nib_width * mm
-            canvas.setLineWidth(float(param[2]))
+            canvas.setLineWidth(float(param[2]) * opts.line_weight)
             try:
                 set_dash_style(canvas, param[3])
             except:
                 set_dash_style(canvas, 'solid')
             try:
-                canvas.setStrokeColor(toColor(param[4]))
+                canvas.setStrokeColor(toColorAlpha(param[4], opts.line_alpha))
             except:
-                canvas.setStrokeColor(toColor('black'))
+                canvas.setStrokeColor(toColorAlpha('black', opts.line_alpha))
 
             ystep = xstep * tantheta
 #           x = 0                                   # origin is at the top left
@@ -101,7 +108,7 @@ def draw_lines(canvas, opts, pagesize):
 
     # Fill the top margin with the interline colour
 #   canvas.saveState()
-#   canvas.setFillColor(toColor(opts.gap_colour))
+#   canvas.setFillColor(toColorAlpha(opts.gap_colour, opts.line_alpha))
 #   canvas.rect(0, pagesize[1], pagesize[0], -opts.top_margin * opts.nib_width * mm, stroke = 0, fill = 1)
 #   canvas.restoreState()
 
@@ -112,7 +119,7 @@ def draw_lines(canvas, opts, pagesize):
 
         if opts.gap_colour and opts.gap > 0:
             canvas.saveState()
-            canvas.setFillColor(toColor(opts.gap_colour))
+            canvas.setFillColor(toColorAlpha(opts.gap_colour, opts.line_alpha))
             canvas.rect(0, position - descenders, pagesize[0], -opts.gap * opts.nib_width * mm, stroke = 0, fill = 1)
             canvas.restoreState()
 
@@ -125,15 +132,15 @@ def draw_lines(canvas, opts, pagesize):
 
         for param in opts.rules:
             pos = position + float(param[0]) * opts.nib_width * mm
-            canvas.setLineWidth(float(param[1]))
+            canvas.setLineWidth(float(param[1]) * opts.line_weight)
             try:
                 set_dash_style(canvas, param[2])
             except:
                 set_dash_style(canvas, 'solid')
             try:
-                canvas.setStrokeColor(toColor(param[3]))
+                canvas.setStrokeColor(toColorAlpha(param[3], opts.line_alpha))
             except:
-                canvas.setStrokeColor(toColor('black'))
+                canvas.setStrokeColor(toColorAlpha('black', opts.line_alpha))
 
             canvas.line(0, pos, pagesize[0], pos)
 
@@ -141,15 +148,15 @@ def draw_lines(canvas, opts, pagesize):
             for param in opts.slants:
                 tantheta = math.tan(math.radians(float(param[0])))
                 xstep = float(param[1]) * opts.nib_width * mm
-                canvas.setLineWidth(float(param[2]))
+                canvas.setLineWidth(float(param[2]) * opts.line_weight)
                 try:
                     set_dash_style(canvas, param[3])
                 except:
                     set_dash_style(canvas, 'solid')
                 try:
-                    canvas.setStrokeColor(toColor(param[4]))
+                    canvas.setStrokeColor(toColorAlpha(param[4], opts.line_alpha))
                 except:
-                    canvas.setStrokeColor(toColor('black'))
+                    canvas.setStrokeColor(toColorAlpha('black', opts.line_alpha))
 
                 x1 = offset - descenders * tantheta
                 y1 = position - descenders
@@ -288,7 +295,7 @@ def main(opts):
         pagesize = ( pagesize[0] - 72, pagesize[1] - 72 )
         c.translate(36, 36)
 
-    c.setAuthor("Eris Associates Ltd")
+    c.setAuthor(__AUTHOR__)
     if opts.title:
         try:
             opts.title = opts.title%(opts.nib_width)
@@ -299,7 +306,15 @@ def main(opts):
     c.setTitle(opts.title)
 
     def subj_list(x): return '[' + x + ']'
-    opts.subject = "Rules: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.rules)))
+    opts.subject = ""
+    if opts.line_weight != 1 or opts.line_alpha != 1:
+        opts.subject += "Line:"
+        if opts.line_alpha != 1:
+            opts.subject += " alpha=%.1f"%opts.line_alpha
+        if opts.line_weight != 1:
+            opts.subject += "%s weight=%.1f"%(("," if opts.line_alpha != 1 else ""), opts.line_weight)
+        opts.subject += "  "
+    opts.subject += "Rules: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.rules)))
     opts.subject += "  Gap: %.0f"%opts.gap
     if opts.slants:
         opts.subject += "  Slants: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.slants)))
@@ -383,6 +398,11 @@ def parse_options():
                       help = "Size of font to use for example letters (in nib widths).")
     parser.add_argument("--letters", default = "",
                       help = "Letters to place at the start of lines (one per line).")
+
+    parser.add_argument("--line-weight", type = float, default = 1,
+                      help = "Scaling factor for line widths. This allows the same template to be used with thicker lines for behind-the-page use or thinner lines for writing directly on practice pages. Default 1.")
+    parser.add_argument("--line-alpha", type = float, default = 1,
+                      help = "Alpha (opacity) to use for lines. Rather than make them thinner you may prefer to make them lighter. Default 1.")
 
     parser.add_argument("-r", "--rules", nargs= '+',
                       help = "List of partition specifications in each line of the form: <height in nw> <line width in mm>[ <style>[ <colour>]]")
