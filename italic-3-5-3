@@ -2,10 +2,17 @@
 # is specified.
 --title 'italic - %smm nib'
 
-#--bar-width 1
+--bar-width 0
+
+--font Times-Italic
+--font-size 36
+#--letters 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 --gap 3
---gap-colour '#e5e5e5'
+--gap-colour '#e8e8e8'
+
+--line-alpha 0.25
+--bleed full
 
 # Horizontal rules for each line are centred on the baseline of your
 # font at position 0. It is not necessary to actually rule a line
@@ -18,13 +25,13 @@
 # using false top and bottom rules.
 --rules
     # position width style colour
-    '      8     0.1 solid  black'
-    '      5     0.1   6-3    red'
-    '      0     0.2             '
-    '     -3     0.1 solid       '
+    '      8     0.1 solid    red'
+    '      5     0.1   6-3  black'
+    '      0     0.5 solid  black'
+    '     -3     0.1 solid    red'
 
 #--slants-per-line
 --slants
     # angle space width  style colour
-    '     5    10   0.1  solid   blue'
-    '    45    10   0.1 dotted   green'
+    '    15    10   0.1  solid  blue'
+    '    45    20   0.1    2-3  blue'
