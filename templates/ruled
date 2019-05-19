@@ -1,0 +1,26 @@
+# The %s in the title will be replaced with whatever nib width
+# is specified.
+--title 'Ruled %smm'
+
+--top-margin 0
+--bar-width 0
+
+--gap 1
+
+# Horizontal rules for each line are centred on the baseline of your
+# font at position 0. It is not necessary to actually rule a line
+# at 0 though. You MUST, however, have rules to mark the extent of
+# ascenders and descenders as they are used to establish the total
+# height of a line. It is not required that they are actually visible,
+# just that they are specified.
+# If you want ascenders to have some overlap with descenders on the
+# previous line you should do that with a negative gap rather than
+# using false top and bottom rules.
+--rules
+    # position width style colour
+    '      0     1.0 solid  black'
+
+#--slants-per-line
+#--slants
+#    # angle space width  style colour
+#    '    0     1   0.1  solid  black'

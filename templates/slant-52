@@ -1,0 +1,47 @@
+# The %s in the title will be replaced with whatever nib width
+# is specified.
+--title 'Slant 52°'
+
+# Spacing is given in multiples of a constant so set that in mm as the nib width multiplier
+#--nib-width  9.525 # 3/8" in mm
+#--nib-width 12.7   # 1/2" in mm
+--nib-width 5   # in mm
+
+--bar-width 0
+
+#--font Times-Italic
+#--font-size 36
+#--letters 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+--top-margin 0
+--top-colour '#e8e8e8'
+
+--gap 0
+--gap-colour '#e8e8e8'
+
+--line-alpha 1
+#--bleed full
+
+# Horizontal rules for each line are centred on the baseline of your
+# font at position 0. It is not necessary to actually rule a line
+# at 0 though. You MUST, however, have rules to mark the extent of
+# ascenders and descenders as they are used to establish the total
+# height of a line. It is not required that they are actually visible,
+# just that they are specified.
+# If you want ascenders to have some overlap with descenders on the
+# previous line you should do that with a negative gap rather than
+# using false top and bottom rules.
+#--rules
+#    # position width style colour
+#    '      3     0.5 12-12  black'
+#    '      2     0.5   6-6  black'
+#    '      1     0.5 solid  black'
+#    '      0     1.0 solid  black'
+#    '     -1     0.5   6-6  black'
+#    '     -2     0.5 12-12  black'
+
+#--slants-per-line
+--slants
+    # angle space width  style colour
+    '   _52     3   1.0  solid black'
+#   '   _30    10   0.1    2-3  blue'
