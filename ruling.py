@@ -57,24 +57,34 @@ def toColorAlpha(colour, alpha):
     return colour
 
 
+def parse_angle(spec):
+    if spec[0] == '_':
+        theta = float(spec[1:])
+    elif spec[0] == '|':
+        theta = 90 - float(spec[1:])
+    else:
+        theta = 90 - float(spec)
+
+    return math.radians(theta)
+
 def draw_lines(canvas, opts, pagesize):
-    ascenders = max(float(x[0]) for x in opts.rules) * opts.nib_width * mm
-    descenders = -min(float(x[0]) for x in opts.rules) * opts.nib_width * mm
+    if opts.rules:
+        ascenders = max(float(x[0]) for x in opts.rules) * opts.nib_width * mm
+        descenders = -min(float(x[0]) for x in opts.rules) * opts.nib_width * mm
+    else:
+        ascenders = pagesize[1]
+        descenders = 0
+
     line_height = ascenders + descenders
+    gap = opts.gap * opts.nib_width * mm
 
     if not opts.slants_per_line:
         for param in opts.slants:
-            tantheta = math.tan(math.radians(90 - float(param[0])))
+            tantheta = math.tan(parse_angle(param[0]))
             xstep = float(param[1]) * opts.nib_width * mm
             canvas.setLineWidth(float(param[2]) * opts.line_weight)
-            try:
-                set_dash_style(canvas, param[3])
-            except:
-                set_dash_style(canvas, 'solid')
-            try:
-                canvas.setStrokeColor(toColorAlpha(param[4], opts.line_alpha))
-            except:
-                canvas.setStrokeColor(toColorAlpha('black', opts.line_alpha))
+            set_dash_style(canvas, param[3])
+            canvas.setStrokeColor(toColorAlpha(param[4], opts.line_alpha))
 
             ystep = xstep * tantheta
 #           x = 0                                   # origin is at the top left
@@ -106,21 +116,21 @@ def draw_lines(canvas, opts, pagesize):
                     canvas.line(pagesize[0], y, pagesize[0] - y / tantheta, 0)
                     y -= ystep
 
-    # Fill the top margin with the interline colour
-#   canvas.saveState()
-#   canvas.setFillColor(toColorAlpha(opts.gap_colour, opts.line_alpha))
-#   canvas.rect(0, pagesize[1], pagesize[0], -opts.top_margin * opts.nib_width * mm, stroke = 0, fill = 1)
-#   canvas.restoreState()
+    if opts.top_colour and opts.top_margin > 0:
+        canvas.saveState()
+        canvas.setFillColor(toColorAlpha(opts.top_colour, opts.top_alpha))
+        canvas.rect(0, pagesize[1], pagesize[0], -opts.top_margin * opts.nib_width * mm, stroke = 0, fill = 1)
+        canvas.restoreState()
 
     offset = (2 * opts.bar_width + opts.offset * opts.nib_width) * mm
     position = pagesize[1] - (opts.top_margin * opts.nib_width * mm);
     while position >= line_height:
         position -= ascenders
 
-        if opts.gap_colour and opts.gap > 0:
+        if opts.gap_colour and gap > 0:
             canvas.saveState()
-            canvas.setFillColor(toColorAlpha(opts.gap_colour, opts.line_alpha))
-            canvas.rect(0, position - descenders, pagesize[0], -opts.gap * opts.nib_width * mm, stroke = 0, fill = 1)
+            canvas.setFillColor(toColorAlpha(opts.gap_colour, opts.gap_alpha))
+            canvas.rect(0, position - descenders, pagesize[0], -min(gap, position-descenders), stroke = 0, fill = 1)
             canvas.restoreState()
 
         if opts.letters:
@@ -131,32 +141,22 @@ def draw_lines(canvas, opts, pagesize):
             opts.letters = opts.letters[1:]
 
         for param in opts.rules:
+            if len(param) < 4:
+                continue
             pos = position + float(param[0]) * opts.nib_width * mm
             canvas.setLineWidth(float(param[1]) * opts.line_weight)
-            try:
-                set_dash_style(canvas, param[2])
-            except:
-                set_dash_style(canvas, 'solid')
-            try:
-                canvas.setStrokeColor(toColorAlpha(param[3], opts.line_alpha))
-            except:
-                canvas.setStrokeColor(toColorAlpha('black', opts.line_alpha))
+            set_dash_style(canvas, param[2])
+            canvas.setStrokeColor(toColorAlpha(param[3], opts.line_alpha))
 
             canvas.line(0, pos, pagesize[0], pos)
 
         if opts.slants_per_line:
             for param in opts.slants:
-                tantheta = math.tan(math.radians(float(param[0])))
+                tantheta = math.tan(parse_angle(param[0]))
                 xstep = float(param[1]) * opts.nib_width * mm
                 canvas.setLineWidth(float(param[2]) * opts.line_weight)
-                try:
-                    set_dash_style(canvas, param[3])
-                except:
-                    set_dash_style(canvas, 'solid')
-                try:
-                    canvas.setStrokeColor(toColorAlpha(param[4], opts.line_alpha))
-                except:
-                    canvas.setStrokeColor(toColorAlpha('black', opts.line_alpha))
+                set_dash_style(canvas, param[3])
+                canvas.setStrokeColor(toColorAlpha(param[4], opts.line_alpha))
 
                 x1 = offset - descenders * tantheta
                 y1 = position - descenders
@@ -286,7 +286,7 @@ def main(opts):
     if opts.landscape:
         pagesize = pagesize[1], pagesize[0]
 
-    opts.rules = [ x.split() for x in opts.rules ]
+    opts.rules = [ x.split() for x in opts.rules ] if opts.rules else []
     opts.slants = [ x.split() for x in opts.slants ] if opts.slants else []
     opts.bleed = opts.bleed.lower()
 
@@ -294,6 +294,9 @@ def main(opts):
     if opts.bleed == "none":
         pagesize = ( pagesize[0] - 72, pagesize[1] - 72 )
         c.translate(36, 36)
+    if opts.mirror:
+        c.translate(pagesize[0], 0)
+        c.scale(-1, 1)
 
     c.setAuthor(__AUTHOR__)
     if opts.title:
@@ -314,14 +317,16 @@ def main(opts):
         if opts.line_weight != 1:
             opts.subject += "%s weight=%.1f"%(("," if opts.line_alpha != 1 else ""), opts.line_weight)
         opts.subject += "  "
-    opts.subject += "Rules: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.rules)))
-    opts.subject += "  Gap: %.0f"%opts.gap
+    if opts.rules:
+        opts.subject += "Rules: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.rules)))
+    if opts.gap:
+        opts.subject += "  Gap: %.1f"%opts.gap
     if opts.slants:
         opts.subject += "  Slants: " + ", ".join(map(subj_list, (", ".join(x) for x in opts.slants)))
     if opts.font and opts.font_size and opts.letters:
         opts.subject += "  Font: " + opts.font
         if opts.font_size:
-            opts.subject += "  Size: %.0f"%opts.font_size
+            opts.subject += "  Size: %.1f"%opts.font_size
     c.setSubject(opts.subject)
 
     while True:
@@ -383,11 +388,18 @@ def parse_options():
                       help = "Create landscape instead of the default portrait sheet")
     parser.add_argument("--bleed", default = "none",
                       help = "none - place title and spec in margins around the rulings, crop - expand the page size, move the title and spec outside the normal page boundaries and add crop marks, full - place the title and spec off the edges of the page where they are probably lost. Both crop and none result in rulings that fill the given page size, although in the case of crop you would have to print on larger paper and cut down if required.")
+    parser.add_argument("-m", "--mirror", action="store_true", default = False,
+                      help = "Generate mirrored output for printing on the back of printable acetates allowing it to be used with the smooth face uppermost.")
 
     parser.add_argument("-w", "--nib-width", type = float,
                       help = "Width of the nib in millimeters. Other measurements in nw are multiples of this.")
+
     parser.add_argument("--top-margin", default = 2, type = int,
                       help = "Top margin (in nib widths). Default is 2.")
+    parser.add_argument("--top-colour",
+                      help = "Colour of top margin. No default (i.e. transparent).")
+    parser.add_argument("--top-alpha", type = float, default = 0.5,
+                      help = "Alpha (opacity) to use for the top margin. Default 0.5.")
 
     parser.add_argument("-b", "--bar-width", type = float, default = 1,
                       help = "Width of the bar markings to be drawn on the left and right (in mm). Default is 1.")
@@ -413,6 +425,8 @@ def parse_options():
                       help = "Gap between lines (in nib widths). Default is 1.")
     parser.add_argument("-g", "--gap-colour",
                       help = "Colour of gap between lines. No default (i.e. transparent).")
+    parser.add_argument("--gap-alpha", type = float, default = 0.5,
+                      help = "Alpha (opacity) to use for gap filling. Default 0.5.")
 
     parser.add_argument("-O", "--offset", type = float, default = 1,
                       help = "Offset of slant lines and letters from start of line or bar markings (in nib widths). Default is 1.")
