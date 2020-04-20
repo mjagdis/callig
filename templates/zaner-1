@@ -34,5 +34,5 @@
 #--slants-per-line
 --slants
     # angle space width  style colour
-    '   _52    10   0.1  solid  blue'
-    '   _30    10   0.1    2-3  blue'
+    '   _52    10   0.2  solid  blue'
+    '   _30    10   0.2    2-3  blue'
