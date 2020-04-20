@@ -13,7 +13,7 @@ reportlab.rl_config.warnOnMissingFontGlyphs = 0
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib.pagesizes import A6, A5, A4, A3, A2, A1, A0, LETTER, LEGAL
-from reportlab.lib.colors import toColor
+from reportlab.lib.colors import toColor, HexColor
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
@@ -52,7 +52,10 @@ def set_dash_style(canvas, spec):
 
 
 def toColorAlpha(colour, alpha):
-    colour = toColor(colour)
+    if colour[0] == '#':
+        colour = HexColor(colour)
+    else:
+        colour = toColor(colour)
     colour = colour.clone(alpha = alpha)
     return colour
 
