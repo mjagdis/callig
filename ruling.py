@@ -20,7 +20,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 __VERSION__ = "1.0"
 __AUTHOR__  = "Eris Associates Ltd"
-__COPYRIGHT__ = "v" + __VERSION__ + ", © " + __AUTHOR__ + ", 2014"
+__COPYRIGHT__ = "v" + __VERSION__ + ", © " + __AUTHOR__ + ", 2020"
 
  
 page_sizes = {
